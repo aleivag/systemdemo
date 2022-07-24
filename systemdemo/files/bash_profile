@@ -1,0 +1,4 @@
+cd $OG_PATH
+
+PATH="/socal/venv/bin:$PATH"
+export PATH

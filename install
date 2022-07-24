@@ -1,0 +1,57 @@
+#!/usr/bin/env python3 
+
+import sys
+import os
+from pathlib import Path
+import venv
+import subprocess
+import shutil
+import getpass 
+from itertools import product
+
+THIS_DIR = Path(__file__).absolute().resolve().parent
+VENV = THIS_DIR / "venv"
+PYTHON = VENV / "bin/python3"
+FILEROOT = VENV / "debian-root"
+
+if not VENV.exists():
+  venv.create(
+    VENV, 
+    system_site_packages=False, 
+    clear=True, 
+    symlinks=False, 
+    with_pip=True, 
+    prompt=None, 
+    upgrade_deps=False
+  )
+
+if not FILEROOT.exists():
+    subprocess.run(["sudo", "debootstrap", "--include", "dbus,vim", "unstable", FILEROOT], check=True)
+
+if not Path(sys.executable).samefile(PYTHON):
+  # re exec but in the venv
+  os.execv(PYTHON, (PYTHON, *sys.argv))
+
+## Now we are under the venv, lets install it ins a sandbox
+## we cant use pystemd, because we have not installit yet
+all_dirs = {
+    f"BindPaths={d}:/tmp/{d.name}" for d in THIS_DIR.glob("*")
+}
+os.execv(
+    shutil.which("systemd-run"),
+    (
+        shutil.which("systemd-run"),
+        "--pty",
+        "--property", "PrivateTmp=True",
+        *[
+            b 
+            for a in product({"--property"}, all_dirs) 
+            for b in a
+        ],
+        "--uid", getpass.getuser(),
+        "--working-directory", "/tmp",
+        sys.executable,
+        THIS_DIR / "setup.py",
+        "install"
+    )
+)
