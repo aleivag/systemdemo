@@ -6,15 +6,18 @@ from pathlib import Path
 import venv
 import subprocess
 from setuptools import setup
+import time
 
 PYSTEMD_GIT = "https://github.com/facebookincubator/pystemd"
 
 THIS_DIR = Path(__file__).absolute().resolve().parent
 MODULE_SRC = THIS_DIR / "systemdemo"
+VERSION = "0.1.1" + os.getenv("SYSTEMDEMO_PATCH_VERSION", f".{int(time.time())}")
+
 
 setup(
     name="systemdemo",
-    version="0.1",
+    version=VERSION,
     packages=["systemdemo"],
     author="Alvaro Leiva",
     author_email="aleivag@fb.com",
@@ -42,13 +45,19 @@ setup(
           ]
         ],
     },
-    install_requires=["cython", "pygments", "ipython", f"pystemd @ {PYSTEMD_GIT}"],
+    install_requires=[
+      "cython", 
+      "pygments", 
+      "ipython",
+      "pystemd",
+    ],
     # long_description=long_description,
     # long_description_content_type="text/markdown",
     entry_points={
         'console_scripts': [
             'systemd-emo = systemdemo.demo:demo',
             'start-demo = systemdemo.tmux:start',
+            'stop-demo = systemdemo.tmux:stop',
         ]
     },
     license="LGPL-2.1+",

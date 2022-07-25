@@ -32,6 +32,9 @@ if not Path(sys.executable).samefile(PYTHON):
   # re exec but in the venv
   os.execv(PYTHON, (PYTHON, *sys.argv))
 
+
+subprocess.run([sys.executable, "-m", "pip", "install", "wheel"], check=True)
+
 ## Now we are under the venv, lets install it ins a sandbox
 ## we cant use pystemd, because we have not installit yet
 all_dirs = {
@@ -50,8 +53,12 @@ os.execv(
         ],
         "--uid", getpass.getuser(),
         "--working-directory", "/tmp",
-        sys.executable,
-        THIS_DIR / "setup.py",
-        "install"
+        shutil.which("bash"),
+        "-c",
+        f"""
+{sys.executable} setup.py bdist_wheel
+ls dist/*
+{sys.executable} -m pip install dist/*.whl
+        """
     )
 )

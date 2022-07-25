@@ -13,6 +13,9 @@ from pygments import highlight
 from pygments.lexers import PythonLexer
 from pygments.formatters import TerminalFormatter
 
+from IPython.terminal.embed import InteractiveShellEmbed
+
+from systemdemo.constants import DEBIAN_ROOT
 
 import pystemd
 import pystemd.run
@@ -21,11 +24,11 @@ stdout = sys.stdout
 stdin = sys.stdin
 stderr = sys.stderr
 
-from IPython.terminal.embed import InteractiveShellEmbed
 
 display_banner = f"""
 Welcome to systemdemo interactive shell for python {sys.version}.
 """
+
 shell = InteractiveShellEmbed()
 
 os.environ['EDITOR']='vim'
@@ -204,14 +207,13 @@ def cgroup_socal():
 
 
 def chroot_socal():
-    FILEROOT = THIS_DIR.parent / "fileroot"
     return _epd(f"""pystemd.run(
     ['/bin/bash'], 
     stdin=sys.stdin, stdout=sys.stdout, 
     wait=True, pty=True, 
     name='mys.service',
     extra={{
-        'RootDirectory': '{FILEROOT}',
+        'RootDirectory': '{DEBIAN_ROOT}',
         
         'MountAPIVFS': True,
     }}
@@ -278,5 +280,7 @@ def demo():
     shell.mainloop()
 
 if __name__ == '__main__':
-
+    if not os.getuid():
+        print("You shold run this as root, or you will have a bad time")
+        sys.exit(-1)
     demo()
