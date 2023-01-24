@@ -1,0 +1,51 @@
+#!/bin/bash
+set -ex
+
+DEBIAN_ROOT="/opt/debian"
+PYSTEMD_SRC="/opt/pystemd"
+PYSTEMD_REPO="https://github.com/facebookincubator/pystemd"
+
+sudo mkdir -p "$DEBIAN_ROOT" "$PYSTEMD_SRC"
+sudo dnf install -y \
+        git\
+        libX{11,t,ext,mu}\
+        debootstrap\
+        systemd-devel\
+        mkosi\
+        python3-{devel,Cython,wheel}
+
+sudo systemctl enable vboxadd.service vboxadd-service.service
+
+
+test -e ${DEBIAN_ROOT}/etc/os-release || sudo debootstrap --include 'dbus,vim' unstable "$DEBIAN_ROOT"
+test -e ${PYSTEMD_SRC}/setup.py || sudo git clone $PYSTEMD_REPO $PYSTEMD_SRC
+
+# create pystemd wheel and install it in root dit
+
+cd $PYSTEMD_SRC
+test -e ${PYSTEMD_SRC}/dist/*.whl || sudo python3 setup.py bdist_wheel
+sudo python3 -m pip install dist/*.whl --force-reinstall
+
+# cleanup root 
+sudo dnf clean all 
+
+sudo rm -f  /home/*/.bash_history /root/.bash_history
+sudo rm -rf  /var/log/*
+
+cat <<EOF > /home/vagrant/.bash_profile
+# .bash_profile
+# this file was created for the workflow to move directly to root
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+	. ~/.bashrc
+fi
+
+exec sudo su -
+
+EOF
+
+
+
+# sudo dd if=/dev/zero of=/EMPTY bs=1M || /bin/true
+# rm -f /EMPTY

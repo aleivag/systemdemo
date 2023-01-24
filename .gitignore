@@ -82,3 +82,7 @@ target/
 venv/
 ENV/
 
+# builds
+.vagrant
+boxes
+vm
