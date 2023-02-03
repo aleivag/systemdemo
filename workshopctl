@@ -167,12 +167,6 @@ def build(build_dir, keep_vm, build_stage, provision_script, pre_provision_shell
                 alias_box.unlink()
             alias_box.symlink_to(dest_box.absolute())
 
-@main.command()
-def start():
-    for units in WORKSHOP_DIR.glob("**/systemd.units/*"):
-        print(units)
-
-
 
 
 if __name__ == "__main__":
