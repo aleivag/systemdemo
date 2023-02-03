@@ -1,0 +1,6 @@
+[Unit]
+Description=Testing python socket server
+
+[Service]
+WorkingDirectory=/opt/workshop
+ExecStart=socket-activation/server

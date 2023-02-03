@@ -12,7 +12,9 @@ sudo dnf install -y \
         debootstrap\
         systemd-devel\
         mkosi\
-        python3-{devel,Cython,wheel}
+        vim\
+        tmux\
+        python3-{devel,Cython,wheel,ipython}
 
 sudo systemctl enable vboxadd.service vboxadd-service.service
 
@@ -26,11 +28,12 @@ cd $PYSTEMD_SRC
 test -e ${PYSTEMD_SRC}/dist/*.whl || sudo python3 setup.py bdist_wheel
 sudo python3 -m pip install dist/*.whl --force-reinstall
 
-# cleanup root 
-sudo dnf clean all 
+mkdir -p /etc/systemd/system.conf.d
 
-sudo rm -f  /home/*/.bash_history /root/.bash_history
-sudo rm -rf  /var/log/*
+cat <<EOF > /etc/systemd/system.conf.d/workshop-env.conf
+[Manager]
+DefaultEnvironment=WORKSHOP_DIR=/opt/workshop
+EOF
 
 cat <<EOF > /home/vagrant/.bash_profile
 # .bash_profile
@@ -41,9 +44,43 @@ if [ -f ~/.bashrc ]; then
 	. ~/.bashrc
 fi
 
+# auto cd into workshop directory
+test -e /opt/workshop/ || cd /opt/workshop/
+
+# lets move to root
 exec sudo su -
 
 EOF
+
+cat <<EOF > /root/.tmux.conf
+new-session
+set-option -g -q mouse on
+
+# starts windows from 1 (easy on the keyboard)
+set -g base-index 1
+# also rename them if i destroy one
+set -g renumber-windows on
+
+
+set -g default-terminal "screen-256color"
+set -g history-limit 30000
+bind -n C-k send-keys C-e \; send-keys -R \;  send-keys C-l \; clear-history
+
+
+# reload my tmux config (it destroy my session?)
+bind-key r source-file ~/.tmux.conf
+
+# destroy panel/win
+bind-key q kill-pane
+bind-key Q kill-window
+
+EOF
+
+
+# cleanup root 
+sudo dnf clean all 
+sudo rm -f  /home/*/.bash_history /root/.bash_history
+sudo rm -rf  /var/log/*
 
 
 

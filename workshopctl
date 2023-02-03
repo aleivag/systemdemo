@@ -44,6 +44,7 @@ except ImportError:
 
 BOX_DIR = Path(__file__).resolve().absolute().parent / "boxes"
 BIN_DIR = Path(__file__).resolve().absolute().parent / "bin"
+WORKSHOP_DIR = Path(__file__).resolve().absolute().parent / "workshop"
 
 class Vagrant:
     def __init__(self, base, base_box):
@@ -103,7 +104,7 @@ def main():
 @main.command()
 @click.option("--build-dir", default=None, help='where to build the box')
 @click.option("--keep-vm/--destroy-vm", default=False, help='if you want to destroy the vm after building', show_default=True)
-@click.option("--build-stage", "-m", type=click.Choice(["0", "1", "n", "i"]), default="n")
+@click.option("--build-stage", "-m", type=click.Choice(["0", "1", "n", "i", 'l']), default="n")
 @click.option("--provision-script", type=Path, default=BIN_DIR / "provision-build")
 @click.option("--pre-provision-shell", is_flag=True, default=False)
 @click.option("--post-provision-shell", is_flag=True, default=False)
@@ -118,10 +119,14 @@ def build(build_dir, keep_vm, build_stage, provision_script, pre_provision_shell
         base_box = BOX_DIR / "fedora/37-base.box"
         dest_box = BOX_DIR / f"fedora/37-workshop-{datetime.today().strftime('%Y.%m.%d.%H%M')}.box"
         alias_box = BOX_DIR / "fedora/37-last.box"
-    elif build_stage == "n":
+    elif build_stage in ("n", 'l'):
         base_box = (BOX_DIR / "fedora/37-last.box").resolve()
         dest_box = BOX_DIR / f"fedora/37-workshop-{datetime.today().strftime('%Y.%m.%d.%H%M')}.box"
         alias_box = BOX_DIR / "fedora/37-last.box"
+    elif build_stage in 'l':
+        base_box = (BOX_DIR / "fedora/37-last.box").resolve()
+        dest_box = None
+        alias_box = None
     elif build_stage == "i":
         base_box = "aleivag/fedora37"
         dest_box = BOX_DIR / f"fedora/37-workshop-{datetime.today().strftime('%Y.%m.%d.%H%M')}.box"
@@ -155,12 +160,18 @@ def build(build_dir, keep_vm, build_stage, provision_script, pre_provision_shell
         if post_provision_shell:
             with contextlib.suppress():
                 box.shell()
-        
-        box.package(dest_box.absolute())
+        if dest_box:
+            box.package(dest_box.absolute())
         if alias_box:
             if alias_box.exists():
                 alias_box.unlink()
             alias_box.symlink_to(dest_box.absolute())
+
+@main.command()
+def start():
+    for units in WORKSHOP_DIR.glob("**/systemd.units/*"):
+        print(units)
+
 
 
 
